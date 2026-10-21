@@ -1,0 +1,101 @@
+@page
+@model SafeVault.Web.Pages.Vault.IndexModel
+@{
+    ViewData["Title"] = "My vault";
+}
+
+<h1>My vault</h1>
+
+@if (TempData["Message"] is string message)
+{
+    <div class="alert alert-success" role="status">@message</div>
+}
+@if (TempData["Error"] is string tempError)
+{
+    <div class="alert alert-error" role="alert">@tempError</div>
+}
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-error" role="alert">
+        <ul>
+            @foreach (var error in ViewData.ModelState.Values.SelectMany(entry => entry.Errors))
+            {
+                <li>@error.ErrorMessage</li>
+            }
+        </ul>
+    </div>
+}
+@if (Model.SearchError is not null)
+{
+    <div class="alert alert-error" role="alert">@Model.SearchError</div>
+}
+
+<form method="get" class="toolbar">
+    <label for="q" class="visually-hidden">Search your items</label>
+    <input id="q" name="q" value="@Model.Q" maxlength="100" placeholder="Search titles and content" />
+    <button type="submit" class="btn">Search</button>
+    @if (!string.IsNullOrWhiteSpace(Model.Q))
+    {
+        <a class="btn btn-quiet" asp-page="/Vault/Index">Clear</a>
+    }
+</form>
+
+@if (Model.Items.Count == 0)
+{
+    <p class="empty">
+        @(string.IsNullOrWhiteSpace(Model.Q)
+            ? "Your vault is empty. Add your first item below."
+            : "No items match that search.")
+    </p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">Title</th>
+                <th scope="col">Content</th>
+                <th scope="col">Saved</th>
+                <th scope="col"><span class="visually-hidden">Actions</span></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Items)
+            {
+                <tr>
+                    <td>
+                        <a asp-page="/Vault/Detail" asp-route-id="@item.Id">
+                            @* Highlight returns HTML, but only after encoding the text. *@
+                            @HtmlOutput.Highlight(item.Title, Model.Q)
+                        </a>
+                    </td>
+                    <td class="preview">@HtmlOutput.Highlight(IndexModel.Preview(item.Content), Model.Q)</td>
+                    <td class="nowrap">@item.CreatedUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                    <td class="nowrap">
+                        <form method="post" asp-page-handler="Delete" asp-route-id="@item.Id" class="inline-form">
+                            <button type="submit" class="btn btn-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<section class="card">
+    <h2>New item</h2>
+    <form method="post" asp-page-handler="Create">
+        <label for="title">Title</label>
+        <input id="title" name="Title" value="@Model.Title" maxlength="100" required />
+
+        <label for="body">Content</label>
+        <textarea id="body" name="Body" rows="5" maxlength="10000">@Model.Body</textarea>
+
+        <p class="field-hint">
+            Stored exactly as typed and always displayed as text. Markup such as
+            <code>&lt;script&gt;</code> is shown, never executed.
+        </p>
+
+        <button type="submit" class="btn">Save item</button>
+    </form>
+</section>

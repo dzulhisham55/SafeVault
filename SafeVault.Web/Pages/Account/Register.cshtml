@@ -1,0 +1,38 @@
+@page
+@model SafeVault.Web.Pages.Account.RegisterModel
+@{
+    ViewData["Title"] = "Create account";
+}
+
+<section class="card narrow">
+    <h1>Create account</h1>
+
+    @if (Model.Errors.Count > 0)
+    {
+        <div class="alert alert-error" role="alert">
+            <ul>
+                @foreach (var error in Model.Errors)
+                {
+                    <li>@error</li>
+                }
+            </ul>
+        </div>
+    }
+
+    <form method="post">
+        <label asp-for="Input.Username">Username</label>
+        <input asp-for="Input.Username" autocomplete="username" maxlength="32" required />
+        <span class="field-hint">3-32 characters: letters, digits and underscores.</span>
+
+        <label asp-for="Input.Password">Password</label>
+        <input asp-for="Input.Password" type="password" autocomplete="new-password" maxlength="128" required />
+        <span class="field-hint">At least 12 characters with upper case, lower case, a digit and a symbol.</span>
+
+        <label asp-for="Input.ConfirmPassword">Confirm password</label>
+        <input asp-for="Input.ConfirmPassword" type="password" autocomplete="new-password" maxlength="128" required />
+
+        <button type="submit" class="btn">Create account</button>
+    </form>
+
+    <p class="hint">Already registered? <a asp-page="/Account/Login">Sign in</a>.</p>
+</section>

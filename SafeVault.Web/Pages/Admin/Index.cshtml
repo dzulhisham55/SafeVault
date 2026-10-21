@@ -1,0 +1,60 @@
+@page
+@model SafeVault.Web.Pages.Admin.IndexModel
+@{
+    ViewData["Title"] = "Administration";
+}
+
+<h1>Administration</h1>
+<p class="hint">
+    @Model.Users.Count account(s) · @Model.ItemCount vault item(s). Only the <strong>Admin</strong> role can open this page.
+</p>
+
+@if (TempData["Message"] is string message)
+{
+    <div class="alert alert-success" role="status">@message</div>
+}
+@if (TempData["Error"] is string error)
+{
+    <div class="alert alert-error" role="alert">@error</div>
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th scope="col">Id</th>
+            <th scope="col">Username</th>
+            <th scope="col">Role</th>
+            <th scope="col">Created</th>
+            <th scope="col"><span class="visually-hidden">Actions</span></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var user in Model.Users)
+        {
+            <tr>
+                <td>@user.Id</td>
+                <td>@user.Username</td>
+                <td><span class="badge">@user.Role</span></td>
+                <td class="nowrap">@user.CreatedUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                <td class="nowrap">
+                    @if (user.Id == Model.CurrentUserId)
+                    {
+                        <span class="hint">(you)</span>
+                    }
+                    else if (user.Role == Roles.Admin)
+                    {
+                        <form method="post" asp-page-handler="SetRole" asp-route-id="@user.Id" asp-route-role="@Roles.User" class="inline-form">
+                            <button type="submit" class="btn btn-quiet">Make user</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <form method="post" asp-page-handler="SetRole" asp-route-id="@user.Id" asp-route-role="@Roles.Admin" class="inline-form">
+                            <button type="submit" class="btn">Make admin</button>
+                        </form>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

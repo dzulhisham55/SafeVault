@@ -1,0 +1,19 @@
+## Build output
+bin/
+obj/
+publish/
+*.user
+.vs/
+
+## Local data (SQLite database and journals)
+App_Data/
+*.db
+*.db-shm
+*.db-wal
+
+## Test and tooling artefacts
+TestResults/
+*.trx
+coverage*.xml
+.idea/
+.DS_Store

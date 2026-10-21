@@ -1,0 +1,62 @@
+PRE-FIX CODE - DO NOT COMPILE
+=============================
+
+This is the first draft of the sign-in lookup. The username from the form was pasted into the
+SQL text, so the input became part of the statement rather than a value.
+
+    // Pages/Account/Login.cshtml.cs (draft)
+    public IActionResult OnPost()
+    {
+        var username = Input.Username;
+        var password = Input.Password;
+
+        var sql = "SELECT Id, Username, PasswordHash, Role FROM Users " +
+                  "WHERE Username = '" + username + "'";
+
+        using var connection = database.OpenConnection();
+        using var command = connection.CreateCommand();
+        command.CommandText = sql;                     // <-- user input inside the statement
+
+        using var reader = command.ExecuteReader();
+        if (!reader.Read())
+        {
+            ErrorMessage = "No account with that username.";   // <-- also an enumeration oracle
+            return Page();
+        }
+
+        var storedHash = reader.GetString(2);
+
+        // And the hash itself was a bare SHA-256, unsalted:
+        var candidate = Convert.ToHexString(
+            SHA256.HashData(Encoding.UTF8.GetBytes(password)));
+
+        if (candidate != storedHash)
+        {
+            ErrorMessage = "Incorrect password.";
+            return Page();
+        }
+
+        // ... issue cookie
+    }
+
+What was wrong
+--------------
+1. `"WHERE Username = '" + username + "'"` lets the input change the statement.
+   - username `admin' --`      -> matches the administrator row (comment removes the rest)
+   - username `' OR '1'='1`    -> matches the first row in the table
+2. The two different error messages told an attacker which usernames exist.
+3. SHA-256 without a salt is fast to brute-force and produces identical hashes for identical
+   passwords.
+
+What replaced it
+----------------
+- Parameterised command (`$username`) in SafeVault.Web/Data/UserRepository.cs.
+- PBKDF2-HMAC-SHA256 with a per-hash salt in SafeVault.Web/Security/PasswordHasher.cs.
+- One generic failure message, plus a dummy-hash verification when no row matches.
+
+Guarding tests
+--------------
+- SafeVault.Tests.SqlInjectionTests.Repository_TreatsPayloadAsLiteralUsername
+- SafeVault.Tests.SqlInjectionTests.Login_WithTautologyPayload_DoesNotAuthenticate
+- SafeVault.Tests.AuthenticationTests.UnknownUsername_ProducesTheSameMessageAsAWrongPassword
+- SafeVault.Tests.PasswordHashingTests.StoredPassword_IsHashedNotPlainText

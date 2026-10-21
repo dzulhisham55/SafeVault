@@ -1,0 +1,40 @@
+PRE-FIX CODE - DO NOT COMPILE
+=============================
+
+The first search implementation used a parameter, but still let the term act as a pattern, and
+did not scope the query to the signed-in user in SQL.
+
+    // Data/VaultItemRepository.cs (draft)
+    public IReadOnlyList<VaultItem> Search(string term)
+    {
+        using var connection = database.OpenConnection();
+        using var command = connection.CreateCommand();
+
+        command.CommandText =
+            "SELECT Id, OwnerId, Title, Content, CreatedUtc FROM VaultItems " +
+            "WHERE Title LIKE $pattern OR Content LIKE $pattern";
+
+        command.Parameters.AddWithValue("$pattern", "%" + term + "%");
+        ...
+    }
+
+What was wrong
+--------------
+1. `%` and `_` are wildcards. Searching for `%` becomes `LIKE '%%%'`, which matches every row
+   in the table - a user could enumerate other people's items through the search box.
+2. Omitting `OwnerId = $ownerId` meant the caller had to remember to filter results afterwards;
+   one forgotten filter is a data leak.
+
+What replaced it
+----------------
+- Escaped wildcards (`\%`, `\_`, `\\`) with `ESCAPE '\'` declared in the statement.
+- `WHERE OwnerId = $ownerId` inside the SQL, so scoping is not optional.
+- The signed-in user's id comes from the claims principal, never from the request.
+- Oversized and control-character terms are rejected by InputValidator.ValidateSearch.
+
+Guarding tests
+--------------
+- SafeVault.Tests.SqlInjectionTests.Search_PercentSign_IsMatchedLiterallyInsteadOfMatchingEverything
+- SafeVault.Tests.SqlInjectionTests.Search_Underscore_IsMatchedLiterally
+- SafeVault.Tests.SqlInjectionTests.Search_WithTautologyPayload_ReturnsOnlyTheSignedInUsersItems
+- SafeVault.Tests.SqlInjectionTests.EscapeLike_NeutralisesWildcards

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] · SafeVault</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <header class="topbar">
+        <a class="brand" asp-page="/Index">SafeVault</a>
+        <nav class="nav">
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <a asp-page="/Vault/Index">My vault</a>
+                @if (User.IsAdmin())
+                {
+                    <a asp-page="/Admin/Index">Administration</a>
+                }
+                <span class="who">
+                    <strong>@User.GetUsername()</strong>
+                    <span class="badge">@User.GetRole()</span>
+                </span>
+                <form method="post" asp-page="/Account/Logout" class="inline-form">
+                    <button type="submit" class="btn btn-quiet">Sign out</button>
+                </form>
+            }
+            else
+            {
+                <a asp-page="/Account/Login">Sign in</a>
+                <a asp-page="/Account/Register">Create account</a>
+            }
+        </nav>
+    </header>
+
+    <main class="page">
+        @RenderBody()
+    </main>
+
+    <footer class="footer">
+        <span>SafeVault · parameterised SQL · PBKDF2 · RBAC · output encoding</span>
+    </footer>
+</body>
+</html>

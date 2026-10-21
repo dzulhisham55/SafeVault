@@ -1,0 +1,21 @@
+@page
+@model SafeVault.Web.Pages.Vault.DetailModel
+@{
+    ViewData["Title"] = Model.Item.Title;
+}
+
+<p><a asp-page="/Vault/Index">← Back to my vault</a></p>
+
+<article class="card">
+    <h1>@Model.Item.Title</h1>
+    <p class="meta">Saved @Model.Item.CreatedUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</p>
+
+    @* Razor encodes this value. A payload such as <script>alert(1)</script> is displayed as
+       characters in the <pre> block and never becomes part of the document's markup. *@
+    <pre class="vault-content">@Model.Item.Content</pre>
+
+    <p class="field-hint">
+        Rendered as text. The raw value is also available as
+        <a href="/api/items/@Model.Item.Id/content">text/plain</a>.
+    </p>
+</article>

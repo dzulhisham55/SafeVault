@@ -1,0 +1,30 @@
+@page
+@model SafeVault.Web.Pages.Account.LoginModel
+@{
+    ViewData["Title"] = "Sign in";
+}
+
+<section class="card narrow">
+    <h1>Sign in</h1>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-error" role="alert">@Model.ErrorMessage</div>
+    }
+
+    <form method="post">
+        <input type="hidden" asp-for="ReturnUrl" />
+
+        <label asp-for="Input.Username">Username</label>
+        <input asp-for="Input.Username" autocomplete="username" maxlength="32" required />
+        <span asp-validation-for="Input.Username" class="field-error"></span>
+
+        <label asp-for="Input.Password">Password</label>
+        <input asp-for="Input.Password" type="password" autocomplete="current-password" maxlength="128" required />
+        <span asp-validation-for="Input.Password" class="field-error"></span>
+
+        <button type="submit" class="btn">Sign in</button>
+    </form>
+
+    <p class="hint">No account yet? <a asp-page="/Account/Register">Create one</a>.</p>
+</section>

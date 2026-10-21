@@ -1,0 +1,12 @@
+@page
+@model SafeVault.Web.Pages.Account.DeniedModel
+@{
+    ViewData["Title"] = "Access denied";
+}
+
+<section class="card narrow">
+    <h1>Access denied</h1>
+    <p>Your account does not have permission to open that page.</p>
+    <p class="hint">Administration is limited to accounts with the <strong>Admin</strong> role.</p>
+    <p><a asp-page="/Vault/Index">Back to my vault</a></p>
+</section>
